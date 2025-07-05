@@ -169,15 +169,15 @@ function LayerSelector({ onLayerChange }) {
     hands: null,
   }).current;
 
-  const handleLayerSelect = (category, layer) => {
+  const handleLayerSelect = useCallback((category, layer) => {
     const newLayers = { ...selectedLayers, [category]: layer };
     setSelectedLayers(newLayers);
-    onLayerChange(newLayers);
-  };
+    if (onLayerChange) onLayerChange(newLayers);
+  }, [selectedLayers, onLayerChange]);
 
   const handleScroll = (category, direction) => {
     const totalImages = layers[category].length;
-    const maxPosition = Math.max(0, totalImages - 6); // 6 images per view
+    const maxPosition = Math.max(0, totalImages - 6);
 
     setCarouselPositions((prev) => {
       let newPosition = prev[category];
@@ -232,7 +232,7 @@ function LayerSelector({ onLayerChange }) {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [handleKeyDown]);
+  }, [carouselRefs, handleKeyDown]);
 
   return (
     <div className="layer-container">
