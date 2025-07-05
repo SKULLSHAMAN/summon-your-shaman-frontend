@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './LayerSelector.css';
 
 const layers = {
@@ -159,17 +159,15 @@ function LayerSelector({ onLayerChange }) {
     hands: 0,
   });
 
-  const carouselRefs = {
-    background: useRef(null),
-    body: useRef(null),
-    skull: useRef(null),
-    hats: useRef(null),
-    mask: useRef(null),
-    eyes: useRef(null),
-    hands: useRef(null),
-  };
-
-  const imagesPerView = 6; // 6 images visible at a time
+  const carouselRefs = useRef({
+    background: null,
+    body: null,
+    skull: null,
+    hats: null,
+    mask: null,
+    eyes: null,
+    hands: null,
+  }).current;
 
   const handleLayerSelect = (category, layer) => {
     const newLayers = { ...selectedLayers, [category]: layer };
@@ -179,33 +177,33 @@ function LayerSelector({ onLayerChange }) {
 
   const handleScroll = (category, direction) => {
     const totalImages = layers[category].length;
-    const maxPosition = Math.max(0, totalImages - imagesPerView);
+    const maxPosition = Math.max(0, totalImages - 6); // 6 images per view
 
     setCarouselPositions((prev) => {
       let newPosition = prev[category];
       if (direction === 'left') {
-        newPosition = Math.max(0, prev[category] - imagesPerView);
+        newPosition = Math.max(0, prev[category] - 6);
       } else if (direction === 'right') {
-        newPosition = Math.min(maxPosition, prev[category] + imagesPerView);
+        newPosition = Math.min(maxPosition, prev[category] + 6);
       }
       return { ...prev, [category]: newPosition };
     });
   };
 
-  const handleKeyDown = (e, category) => {
+  const handleKeyDown = useCallback((e, category) => {
     const currentIndex = selectedLayers[category]
       ? layers[category].indexOf(selectedLayers[category])
       : -1;
     const totalImages = layers[category].length;
 
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      e.preventDefault(); // Prevent default scrolling behavior
+      e.preventDefault();
       let newIndex = currentIndex;
 
       if (e.key === 'ArrowLeft') {
-        newIndex = (currentIndex - 1 + totalImages) % totalImages; // Move to previous image
+        newIndex = (currentIndex - 1 + totalImages) % totalImages;
       } else if (e.key === 'ArrowRight') {
-        newIndex = (currentIndex + 1) % totalImages; // Move to next image
+        newIndex = (currentIndex + 1) % totalImages;
       }
 
       if (newIndex !== currentIndex && newIndex >= 0) {
@@ -213,22 +211,20 @@ function LayerSelector({ onLayerChange }) {
         handleLayerSelect(category, newLayer);
       }
     }
-  };
+  }, [selectedLayers, handleLayerSelect]);
 
   const handleContextMenu = (e) => {
     e.preventDefault();
   };
 
-  // Add keyboard event listener when component mounts
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      // Only trigger if focus is on a carousel or its images
       const activeElement = document.activeElement;
       if (activeElement && activeElement.classList.contains('carousel-image')) {
         const category = Object.keys(carouselRefs).find(
-          (cat) => carouselRefs[cat].current.contains(activeElement)
+          (cat) => carouselRefs[cat] && carouselRefs[cat].contains(activeElement)
         );
-        if (category) {
+        if (category && carouselRefs[category]) {
           handleKeyDown(e, category);
         }
       }
@@ -236,14 +232,14 @@ function LayerSelector({ onLayerChange }) {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [selectedLayers, carouselRefs, handleKeyDown]); // Added carouselRefs and handleKeyDown to dependency array
+  }, [handleKeyDown]);
 
   return (
     <div className="layer-container">
       {Object.keys(layers).map((category) => (
         <div key={category} className="layer-category">
           <h3>{category.toUpperCase()}</h3>
-          <div className="carousel-wrapper" ref={carouselRefs[category]}>
+          <div className="carousel-wrapper" ref={(el) => (carouselRefs[category] = el)}>
             <button
               className="carousel-button left"
               onClick={() => handleScroll(category, 'left')}
@@ -268,8 +264,8 @@ function LayerSelector({ onLayerChange }) {
                     }`}
                     onClick={() => handleLayerSelect(category, layer)}
                     onContextMenu={handleContextMenu}
-                    tabIndex={0} // Makes the image focusable
-                    onKeyDown={(e) => handleKeyDown(e, category)} // Local key handling
+                    tabIndex={0}
+                    onKeyDown={(e) => handleKeyDown(e, category)}
                   />
                 ))}
               </div>
@@ -277,10 +273,7 @@ function LayerSelector({ onLayerChange }) {
             <button
               className="carousel-button right"
               onClick={() => handleScroll(category, 'right')}
-              disabled={
-                carouselPositions[category] >=
-                layers[category].length - imagesPerView
-              }
+              disabled={carouselPositions[category] >= layers[category].length - 6}
             >
               →
             </button>
