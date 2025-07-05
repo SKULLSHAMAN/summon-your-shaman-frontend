@@ -1,23 +1,31 @@
-import logo from './logo.svg';
+import React, { useState, useRef } from 'react';
+import LayerSelector from './components/LayerSelector';
+import CanvasPreview from './components/CanvasPreview';
+import SubmitForm from './components/SubmitForm';
 import './App.css';
 
 function App() {
+  const [selectedLayers, setSelectedLayers] = useState({});
+  const canvasRef = useRef(null);
+
+  const handleLayerChange = (layers) => {
+    setSelectedLayers(layers);
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>Summon Your Shaman</h1>
+      <p>CREATE YOUR OWN SHAMAN
+      </p>
+      <div className="main-container">
+        <div className="layer-section">
+          <LayerSelector onLayerChange={handleLayerChange} />
+        </div>
+        <div className="preview-section">
+          <CanvasPreview layers={selectedLayers} canvasRef={canvasRef} />
+          <SubmitForm canvasRef={canvasRef} />
+        </div>
+      </div>
     </div>
   );
 }
