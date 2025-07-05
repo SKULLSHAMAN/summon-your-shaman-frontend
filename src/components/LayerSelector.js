@@ -236,7 +236,7 @@ function LayerSelector({ onLayerChange }) {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [selectedLayers]); // Add selectedLayers to dependency array
+  }, [selectedLayers, carouselRefs, handleKeyDown]); // Added carouselRefs and handleKeyDown to dependency array
 
   return (
     <div className="layer-container">
